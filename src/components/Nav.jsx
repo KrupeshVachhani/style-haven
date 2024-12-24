@@ -15,7 +15,7 @@ const DashboardNavbar = ({ onSectionChange }) => {
     "Services",
     "Shop Branches",
     "Sold_Product",
-    "Super Admin"
+    "Super Admin",
   ];
 
   const handleSectionClick = (section) => {
@@ -25,25 +25,29 @@ const DashboardNavbar = ({ onSectionChange }) => {
   };
 
   return (
-    <nav className="bg-white shadow-lg">
+    <nav
+      className="shadow-md bg-black bg-opacity-90 fixed w-full z-10"
+    >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between h-16">
           {/* Logo/Brand */}
           <div className="flex items-center">
-            <span className="text-xl font-bold text-gray-800">Style Haven</span>
+            <span className="text-xl font-bold text-white">Style Haven</span>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-4 overflow-x-auto">
+          <div
+            className="hidden lg:flex items-center space-x-4 overflow-x-hidden"
+          >
             {navItems.map((item) => (
               <button
                 key={item}
                 onClick={() => handleSectionClick(item)}
-                className={`px-3 py-2 rounded-md text-sm whitespace-nowrap font-medium transition-colors duration-200 ${
-                  activeSection === item
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-600 hover:bg-blue-100'
-                }`}
+                className={`px-3 py-2 rounded-md text-base whitespace-nowrap font-medium transition-colors duration-200 ${
+    activeSection === item
+      ? 'bg-black text-white'
+      : 'text-white hover:bg-black hover:bg-opacity-60'
+  }`}
               >
                 {item.replace('_', ' ')}
               </button>
@@ -54,7 +58,7 @@ const DashboardNavbar = ({ onSectionChange }) => {
           <div className="lg:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-600 hover:text-gray-900 focus:outline-none"
+              className="text-white focus:outline-none"
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -65,16 +69,16 @@ const DashboardNavbar = ({ onSectionChange }) => {
       {/* Mobile Navigation */}
       {isOpen && (
         <div className="lg:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 bg-white">
+          <div className="px-2 pt-2 pb-3 space-y-1">
             {navItems.map((item) => (
               <button
                 key={item}
                 onClick={() => handleSectionClick(item)}
                 className={`block w-full text-left px-3 py-2 rounded-md text-base font-medium ${
-                  activeSection === item
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-600 hover:bg-blue-100'
-                }`}
+    activeSection === item
+      ? 'bg-black text-white'
+      : 'text-white hover:bg-black hover:bg-opacity-50'
+  }`}
               >
                 {item.replace('_', ' ')}
               </button>

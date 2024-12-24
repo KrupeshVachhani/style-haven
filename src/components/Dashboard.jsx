@@ -136,9 +136,19 @@ const FirebaseDataFetch = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen"
+      style={{
+        background: `linear-gradient(to bottom, #e28161, #7cc6ce)`,
+      }}
+    >
       <DashboardNavbar onSectionChange={handleSectionChange} />
-      <main className="container mx-auto py-6">
+      <main
+        className="container mx-auto py-6 "
+        style={{
+          paddingTop: "6rem", // Adjust this value to match the navbar height
+        }}
+      >
         <h2 className="text-2xl font-bold mb-4 px-6">
           {currentSection} Dashboard
         </h2>
