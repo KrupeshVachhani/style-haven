@@ -72,7 +72,7 @@ const DashboardNavbar = ({ onSectionChange }) => {
                 onClick={() => handleSectionClick(item)}
                 className={`block w-full text-left px-3 py-2 rounded-md text-base font-medium ${
                   activeSection === item
-                    ? "bg-black text-white"
+                    ? "bg-black text-white border border-white"
                     : "text-white hover:bg-black hover:bg-opacity-50"
                 }`}
               >
