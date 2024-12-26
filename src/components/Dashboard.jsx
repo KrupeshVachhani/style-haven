@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase.config";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import DashboardNavbar from "./Nav";
 import AdminDisplay from "./NavComponents/Admin";
 import BookingDisplay from "./NavComponents/Booking";
@@ -12,36 +14,29 @@ import ShopBranchesDisplay from "./NavComponents/ShopBranches";
 import SoldProductDisplay from "./NavComponents/SoldProduct";
 import SuperAdminDisplay from "./NavComponents/SuperAdmin";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDQJrwSpRt-ysA9MfAh2veKu0BZ9AIrSMU",
-  authDomain: "salon-application-b72fb.firebaseapp.com",
-  projectId: "salon-application-b72fb",
-  storageBucket: "salon-application-b72fb.appspot.com",
-  messagingSenderId: "1017956179412",
-  appId: "1:1017956179412:web:24f14f0b6d1965c5074a41",
-  measurementId: "G-2HSPSE0PDG",
-};
-
 const FirebaseDataFetch = () => {
+  const navigate = useNavigate();
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [allData, setAllData] = useState({});
   const [currentSection, setCurrentSection] = useState("Admin");
 
   useEffect(() => {
-    try {
-      initializeApp(firebaseConfig);
-    } catch (error) {
-      if (error.code !== "app/duplicate-app") {
-        console.error("Firebase initialization error:", error);
-      }
-    }
-  }, []);
+    // Retrieve authentication from localStorage
+    const storedAuth = JSON.parse(localStorage.getItem("auth"));
 
-  useEffect(() => {
+    if (
+      !storedAuth ||
+      !storedAuth.isAuthenticated ||
+      !storedAuth.isSuperAdmin
+    ) {
+      // Redirect to login if not authenticated
+      navigate("/login");
+      return;
+    }
+
     const fetchAllData = async () => {
       try {
-        const db = getFirestore();
         const knownCollections = [
           "Admin",
           "Booking",
@@ -81,7 +76,7 @@ const FirebaseDataFetch = () => {
     };
 
     fetchAllData();
-  }, []);
+  }, [navigate]);
 
   const handleSectionChange = (section) => {
     setCurrentSection(section);
@@ -144,7 +139,7 @@ const FirebaseDataFetch = () => {
     >
       <DashboardNavbar onSectionChange={handleSectionChange} />
       <main
-        className="container mx-auto py-6 "
+        className="container mx-auto py-6"
         style={{
           paddingTop: "6rem", // Adjust this value to match the navbar height
         }}
