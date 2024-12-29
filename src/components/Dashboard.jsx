@@ -19,38 +19,54 @@ const FirebaseDataFetch = () => {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [allData, setAllData] = useState({});
-  const [currentSection, setCurrentSection] = useState("Admin");
+  const [currentSection, setCurrentSection] = useState("Booking"); // Default to Booking instead of Admin
+  const [availableSections, setAvailableSections] = useState([]);
+
+  // Get auth state from Redux
+  const { isAuthenticated, isSuperAdmin, isAdmin } = useSelector(
+    (state) => state.auth
+  );
 
   useEffect(() => {
-    // Retrieve authentication from localStorage
+    // Check both Redux state and localStorage
     const storedAuth = JSON.parse(localStorage.getItem("auth"));
+    const isUserAuthenticated = isAuthenticated || storedAuth?.isAuthenticated;
+    const isUserSuperAdmin = isSuperAdmin || storedAuth?.isSuperAdmin;
+    const isUserAdmin = isAdmin || storedAuth?.isAdmin;
 
-    if (
-      !storedAuth ||
-      !storedAuth.isAuthenticated ||
-      (!storedAuth.isSuperAdmin && !storedAuth.isAdmin) // Check for both roles
-    ) {
-      // Redirect to login if not authenticated
+    if (!isUserAuthenticated || (!isUserSuperAdmin && !isUserAdmin)) {
       navigate("/login");
       return;
     }
 
+    // Set available sections based on role
+    const baseNavItems = [
+      "Booking",
+      "Customer",
+      "Employee",
+      "Products",
+      "Services",
+      "Shop Branches",
+      "Sold_Product",
+    ];
+
+    if (isUserSuperAdmin) {
+      // Super Admin sees everything including Admin section
+      setAvailableSections(["Admin", ...baseNavItems]);
+    } else {
+      // Regular Admin sees everything except Admin section
+      setAvailableSections(baseNavItems);
+    }
+
     const fetchAllData = async () => {
       try {
-        const knownCollections = [
-          "Admin",
-          "Booking",
-          "Customer",
-          "Employee",
-          "Products",
-          "Services",
-          "Shop Branches",
-          "Sold_Product",
-          "Super Admin",
-        ];
-
         const fetchedData = {};
-        for (const collectionName of knownCollections) {
+        // Only fetch collections that the user has access to
+        const collectionsToFetch = isUserSuperAdmin
+          ? [...baseNavItems, "Admin"]
+          : baseNavItems;
+
+        for (const collectionName of collectionsToFetch) {
           try {
             const querySnapshot = await getDocs(collection(db, collectionName));
             fetchedData[collectionName] = querySnapshot.docs.map((doc) => ({
@@ -76,10 +92,12 @@ const FirebaseDataFetch = () => {
     };
 
     fetchAllData();
-  }, [navigate]);
+  }, [navigate, isAuthenticated, isSuperAdmin, isAdmin]);
 
   const handleSectionChange = (section) => {
-    setCurrentSection(section);
+    if (availableSections.includes(section)) {
+      setCurrentSection(section);
+    }
   };
 
   const renderSectionContent = () => {
@@ -87,7 +105,7 @@ const FirebaseDataFetch = () => {
 
     switch (currentSection) {
       case "Admin":
-        return <AdminDisplay data={sectionData} />;
+        return isSuperAdmin ? <AdminDisplay data={sectionData} /> : null;
       case "Booking":
         return <BookingDisplay data={sectionData} />;
       case "Customer":
@@ -103,7 +121,7 @@ const FirebaseDataFetch = () => {
       case "Sold_Product":
         return <SoldProductDisplay data={sectionData} />;
       case "Super Admin":
-        return <SuperAdminDisplay data={sectionData} />;
+        return isSuperAdmin ? <SuperAdminDisplay data={sectionData} /> : null;
       default:
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
@@ -131,24 +149,35 @@ const FirebaseDataFetch = () => {
   }
 
   return (
-    <div
-      className="min-h-screen"
-      style={{
-        background: `linear-gradient(to bottom, #e28161, #7cc6ce)`,
-      }}
-    >
-      <DashboardNavbar onSectionChange={handleSectionChange} />
-      <main
-        className="container mx-auto py-6"
+    <div className="relative min-h-screen">
+      {/* Background Overlay */}
+      <div
+        className="absolute inset-0"
         style={{
-          paddingTop: "6rem", // Adjust this value to match the navbar height
+          background: `linear-gradient(to bottom, #e28161, #7cc6ce)`,
+          // filter: `brightness(50%)`,
+          // zIndex: "-1", // Ensure it's behind the content
         }}
-      >
-        <h2 className="text-2xl font-bold mb-4 px-6">
-          {currentSection} Dashboard
-        </h2>
-        {renderSectionContent()}
-      </main>
+      ></div>
+
+      {/* Content Layer */}
+      <div className="relative z-10">
+        <DashboardNavbar
+          onSectionChange={handleSectionChange}
+          availableSections={availableSections}
+        />
+        <main
+          className="container mx-auto py-6"
+          style={{
+            paddingTop: "6rem",
+          }}
+        >
+          <h2 className="text-2xl font-bold mb-4 px-6 z-20">
+            {currentSection} Dashboard
+          </h2>
+          {renderSectionContent()}
+        </main>
+      </div>
     </div>
   );
 };
