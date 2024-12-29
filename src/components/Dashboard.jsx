@@ -28,7 +28,7 @@ const FirebaseDataFetch = () => {
     if (
       !storedAuth ||
       !storedAuth.isAuthenticated ||
-      !storedAuth.isSuperAdmin
+      (!storedAuth.isSuperAdmin && !storedAuth.isAdmin) // Check for both roles
     ) {
       // Redirect to login if not authenticated
       navigate("/login");

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { checkSuperAdmin } from "../redux/auth/AuthSlice";
+import { checkUserRole } from "../redux/auth/SuperAdminAuthSlice";
 
 const LoginPage = () => {
   const dispatch = useDispatch();
@@ -31,14 +31,20 @@ const LoginPage = () => {
         phone: Number(credentials.phone),
       };
 
-      await dispatch(checkSuperAdmin(processedCredentials)).unwrap();
+      // Dispatch the action to check user role (Super Admin or Admin)
+      const userRoleData = await dispatch(
+        checkUserRole(processedCredentials)
+      ).unwrap();
 
-      // Store authentication details in localStorage
-      localStorage.setItem(
-        "auth",
-        JSON.stringify({ isAuthenticated: true, isSuperAdmin: true })
-      );
+      // Store authentication details in localStorage based on role
+      const authData = {
+        isAuthenticated: true,
+        isSuperAdmin: userRoleData.role === "superadmin",
+        isAdmin: userRoleData.role === "admin",
+      };
+      localStorage.setItem("auth", JSON.stringify(authData));
 
+      // Redirect based on role (can be customized for role-specific dashboards)
       navigate("/");
     } catch (err) {
       // Error is handled by the reducer
@@ -49,9 +55,7 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#e28161] to-[#7cc6ce]">
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-        <h2 className="text-2xl font-bold mb-6 text-center">
-          Super Admin Login
-        </h2>
+        <h2 className="text-2xl font-bold mb-6 text-center">Admin Login</h2>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
