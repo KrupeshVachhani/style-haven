@@ -67,7 +67,8 @@ const LoginPage = () => {
                 name="email"
                 value={credentials.email}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 text-gray-700 placeholder-gray-400"
+                placeholder="Enter your email"
                 required
               />
             </div>
@@ -80,7 +81,8 @@ const LoginPage = () => {
                 name="password"
                 value={credentials.password}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 text-gray-700 placeholder-gray-400"
+                placeholder="Enter your password"
                 required
               />
             </div>
@@ -93,7 +95,8 @@ const LoginPage = () => {
                 name="phone"
                 value={credentials.phone}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 text-gray-700 placeholder-gray-400"
+                placeholder="Enter your phone number"
                 required
               />
             </div>

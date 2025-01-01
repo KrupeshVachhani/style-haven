@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 
 const ProductsDisplay = ({ data }) => {
-    console.log(data);
+    // console.log(data);
   
     return (
       <div className="text-gray-500">Products Display</div>

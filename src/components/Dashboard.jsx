@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase.config";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { setLoading } from "../redux/loading";
 import DashboardNavbar from "./Nav";
 import AdminDisplay from "./NavComponents/Admin";
 import BookingDisplay from "./NavComponents/Booking";
@@ -12,60 +13,51 @@ import ProductsDisplay from "./NavComponents/Products";
 import ServicesDisplay from "./NavComponents/Services";
 import ShopBranchesDisplay from "./NavComponents/ShopBranches";
 import SoldProductDisplay from "./NavComponents/SoldProduct";
-import SuperAdminDisplay from "./NavComponents/SuperAdmin";
+import ShimmerLoader from "./Loader/ShimmerLoader";
 
 const FirebaseDataFetch = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [allData, setAllData] = useState({});
-  const [currentSection, setCurrentSection] = useState("Booking"); // Default to Booking instead of Admin
+  const [currentSection, setCurrentSection] = useState("Booking");
   const [availableSections, setAvailableSections] = useState([]);
 
-  // Get auth state from Redux
-  const { isAuthenticated, isSuperAdmin, isAdmin } = useSelector(
-    (state) => state.auth
-  );
+  const { isAuthenticated, isSuperAdmin } = useSelector((state) => state.auth);
+  const { isLoading } = useSelector((state) => state.loading);
 
   useEffect(() => {
-    // Check both Redux state and localStorage
-    const storedAuth = JSON.parse(localStorage.getItem("auth"));
-    const isUserAuthenticated = isAuthenticated || storedAuth?.isAuthenticated;
-    const isUserSuperAdmin = isSuperAdmin || storedAuth?.isSuperAdmin;
-    const isUserAdmin = isAdmin || storedAuth?.isAdmin;
-
-    if (!isUserAuthenticated || (!isUserSuperAdmin && !isUserAdmin)) {
-      navigate("/login");
-      return;
-    }
-
-    // Set available sections based on role
-    const baseNavItems = [
-      "Booking",
-      "Customer",
-      "Employee",
-      "Products",
-      "Services",
-      "Shop Branches",
-      "Sold_Product",
-    ];
-
-    if (isUserSuperAdmin) {
-      // Super Admin sees everything including Admin section
-      setAvailableSections(["Admin", ...baseNavItems]);
-    } else {
-      // Regular Admin sees everything except Admin section
-      setAvailableSections(baseNavItems);
-    }
-
     const fetchAllData = async () => {
       try {
-        const fetchedData = {};
-        // Only fetch collections that the user has access to
-        const collectionsToFetch = isUserSuperAdmin
-          ? [...baseNavItems, "Admin"]
-          : baseNavItems;
+        const storedAuth = JSON.parse(localStorage.getItem("auth")) || {};
+        const isUserAuthenticated = isAuthenticated || storedAuth?.isAuthenticated;
+        const isUserSuperAdmin = isSuperAdmin || storedAuth?.isSuperAdmin;
 
+        if (!isUserAuthenticated) {
+          navigate("/login");
+          return;
+        }
+
+        const baseItems = [
+          "Booking",
+          "Customer",
+          "Employee",
+          "Products",
+          "Services",
+          "Shop Branches",
+          "Sold_Product",
+        ];
+
+        const collectionsToFetch = isUserSuperAdmin
+          ? ["Admin", ...baseItems]
+          : baseItems;
+
+        setAvailableSections(collectionsToFetch);
+
+        // Set loading to true before starting Firebase fetch
+        dispatch(setLoading(true));
+
+        const fetchedData = {};
         for (const collectionName of collectionsToFetch) {
           try {
             const querySnapshot = await getDocs(collection(db, collectionName));
@@ -74,25 +66,21 @@ const FirebaseDataFetch = () => {
               ...doc.data(),
             }));
           } catch (collectionError) {
-            console.warn(
-              `Error fetching collection ${collectionName}:`,
-              collectionError
-            );
+            console.error(`Error fetching ${collectionName}:`, collectionError);
             fetchedData[collectionName] = [];
           }
         }
 
         setAllData(fetchedData);
-        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
         setError(error.message);
-        setIsLoading(false);
+        dispatch(setLoading(false));
       }
     };
 
     fetchAllData();
-  }, [navigate, isAuthenticated, isSuperAdmin, isAdmin]);
+  }, [navigate, isAuthenticated, isSuperAdmin, dispatch]);
 
   const handleSectionChange = (section) => {
     if (availableSections.includes(section)) {
@@ -105,7 +93,7 @@ const FirebaseDataFetch = () => {
 
     switch (currentSection) {
       case "Admin":
-        return isSuperAdmin ? <AdminDisplay data={sectionData} /> : null;
+        return <AdminDisplay data={sectionData} />;
       case "Booking":
         return <BookingDisplay data={sectionData} />;
       case "Customer":
@@ -120,8 +108,6 @@ const FirebaseDataFetch = () => {
         return <ShopBranchesDisplay data={sectionData} />;
       case "Sold_Product":
         return <SoldProductDisplay data={sectionData} />;
-      case "Super Admin":
-        return isSuperAdmin ? <SuperAdminDisplay data={sectionData} /> : null;
       default:
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
@@ -145,22 +131,17 @@ const FirebaseDataFetch = () => {
   }
 
   if (isLoading) {
-    return <div className="p-4">Loading data...</div>;
+    return <ShimmerLoader />;
   }
 
   return (
     <div className="relative min-h-screen">
-      {/* Background Overlay */}
       <div
         className="absolute inset-0"
         style={{
           background: `linear-gradient(to bottom, #e28161, #7cc6ce)`,
-          // filter: `brightness(50%)`,
-          // zIndex: "-1", // Ensure it's behind the content
         }}
-      ></div>
-
-      {/* Content Layer */}
+      />
       <div className="relative z-10">
         <DashboardNavbar
           onSectionChange={handleSectionChange}
