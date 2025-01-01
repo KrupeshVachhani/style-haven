@@ -5,11 +5,12 @@ import {
   addDoc,
   collection,
   onSnapshot,
+  deleteDoc,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../../firebase.config";
 import { useSelector } from "react-redux";
-import { MdPerson } from "react-icons/md";
+import { MdPerson, MdDelete } from "react-icons/md";
 
 const AdminDisplay = () => {
   const [admins, setAdmins] = useState([]);
@@ -58,6 +59,7 @@ const AdminCard = ({ admin }) => {
   const [editedAdmin, setEditedAdmin] = useState(admin);
   const [isUpdating, setIsUpdating] = useState(false);
   const [imageFile, setImageFile] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const { isSuperAdmin: isSuperAdminFromState } = useSelector(
     (state) => state.auth
   );
@@ -146,12 +148,20 @@ const AdminCard = ({ admin }) => {
   };
 
   return (
-    <div className="bg-[#e0dbe2] p-6 rounded-lg shadow-lg">
+    <div className="bg-[#e0dbe2] p-6 rounded-lg shadow-lg relative">
+      {isSuperAdmin && (
+        <button
+          onClick={() => setIsDeleteModalOpen(true)}
+          className="absolute top-4 right-4 text-red-600 hover:text-red-800 transition-colors"
+          title="Remove Admin"
+        >
+          <MdDelete size={24} />
+        </button>
+      )}
+
       <div className="flex flex-col items-center space-y-4">
         <div className="relative w-24 h-24">
-          {loading && (
-            <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-full"></div>
-          )}
+          
           {editedAdmin.image_url &&
           editedAdmin.image_url !== "/default-person.png" ? (
             <img
@@ -218,6 +228,84 @@ const AdminCard = ({ admin }) => {
               : "Edit Details"}
           </button>
         )}
+      </div>
+
+      {isDeleteModalOpen && (
+        <DeleteAdminModal
+          admin={admin}
+          onClose={() => setIsDeleteModalOpen(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+const DeleteAdminModal = ({ admin, onClose }) => {
+  const [adminName, setAdminName] = useState("");
+  const [error, setError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (adminName.trim().toLowerCase() !== admin.name.trim().toLowerCase()) {
+      setError("The entered name doesn't match. Please try again.");
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteDoc(doc(db, "Admin", admin.id));
+      onClose();
+    } catch (error) {
+      console.error("Error deleting admin:", error);
+      setError("Failed to delete admin. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">
+          Remove Admin
+        </h2>
+
+        <div className="mb-4 text-gray-600">
+          <p className="mb-2">
+            To remove this admin, please type their full name:
+          </p>
+          <p className="font-medium">{admin.name}</p>
+        </div>
+
+        <div className="mb-4">
+          <input
+            type="text"
+            value={adminName}
+            onChange={(e) => {
+              setAdminName(e.target.value);
+              setError("");
+            }}
+            placeholder="Enter admin name"
+            className="w-full p-3 border rounded focus:outline-none focus:ring-2 border-gray-300"
+          />
+          {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+        </div>
+
+        <div className="flex justify-between gap-4">
+          <button
+            onClick={onClose}
+            className="flex-1 p-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting || !adminName.trim()}
+            className="flex-1 p-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+          >
+            {isDeleting ? "Removing..." : "Remove Admin"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -431,7 +519,9 @@ const AddAdminModal = ({ isOpen, closeModal }) => {
               }`}
             />
             {errors.mobile_number && (
-              <p className="mt-1 text-sm text-red-500">{errors.mobile_number}</p>
+              <p className="mt-1 text-sm text-red-500">
+                {errors.mobile_number}
+              </p>
             )}
           </div>
 

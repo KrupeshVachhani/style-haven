@@ -53,13 +53,9 @@ const ShimmerLoader = () => {
         <main
           className="container mx-auto py-6"
           style={{
-            paddingTop: "6rem",
+            paddingTop: "10rem",
           }}
         >
-          {/* Section Title Shimmer */}
-          <div className="px-6 mb-4">
-            <div className="h-8 w-64 bg-gray-300 rounded-md"></div>
-          </div>
 
           {/* Admin Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
