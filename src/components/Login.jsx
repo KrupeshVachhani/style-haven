@@ -25,18 +25,15 @@ const LoginPage = () => {
     e.preventDefault();
 
     try {
-      // Convert phone to a number
       const processedCredentials = {
         ...credentials,
         phone: Number(credentials.phone),
       };
 
-      // Dispatch the action to check user role (Super Admin or Admin)
       const userRoleData = await dispatch(
         checkUserRole(processedCredentials)
       ).unwrap();
 
-      // Store authentication details in localStorage based on role
       const authData = {
         isAuthenticated: true,
         isSuperAdmin: userRoleData.role === "superadmin",
@@ -44,10 +41,8 @@ const LoginPage = () => {
       };
       localStorage.setItem("auth", JSON.stringify(authData));
 
-      // Redirect based on role (can be customized for role-specific dashboards)
       navigate("/");
     } catch (err) {
-      // Error is handled by the reducer
       console.error("Login failed:", err);
     }
   };
@@ -67,7 +62,7 @@ const LoginPage = () => {
                 name="email"
                 value={credentials.email}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 text-gray-700 placeholder-gray-400"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2"
                 placeholder="Enter your email"
                 required
               />
@@ -81,7 +76,7 @@ const LoginPage = () => {
                 name="password"
                 value={credentials.password}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 text-gray-700 placeholder-gray-400"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2"
                 placeholder="Enter your password"
                 required
               />
@@ -95,7 +90,7 @@ const LoginPage = () => {
                 name="phone"
                 value={credentials.phone}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 text-gray-700 placeholder-gray-400"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2"
                 placeholder="Enter your phone number"
                 required
               />
