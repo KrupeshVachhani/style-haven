@@ -10,7 +10,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../../firebase.config";
 import { useSelector } from "react-redux";
-import { MdPerson, MdDelete } from "react-icons/md";
+import { MdPerson, MdDelete, MdVisibility, MdVisibilityOff } from "react-icons/md";
 
 const AdminDisplay = () => {
   const [admins, setAdmins] = useState([]);
@@ -57,6 +57,7 @@ const AdminCard = ({ admin }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const { isSuperAdmin: isSuperAdminFromState } = useSelector(
     (state) => state.auth
   );
@@ -72,6 +73,10 @@ const AdminCard = ({ admin }) => {
       setIsSuperAdmin(isSuperAdminFromState);
     }
   }, [isSuperAdminFromState]);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   return (
     <div className="bg-[#e0dbe2] p-6 rounded-lg shadow-lg relative">
@@ -125,8 +130,8 @@ const AdminCard = ({ admin }) => {
           </p>
           <p className="flex justify-between">
             <span className="font-medium">Mobile:</span>
-            <span className="truncate ml-2" title={admin.mobile_number}>
-              {admin.mobile_number}
+            <span className="truncate ml-2" title={admin.phone}>
+              {admin.phone}
             </span>
           </p>
           <p className="flex justify-between">
@@ -135,6 +140,23 @@ const AdminCard = ({ admin }) => {
               {admin.role}
             </span>
           </p>
+          {isSuperAdmin && admin.password && (
+            <p className="flex justify-between items-center">
+              <span className="font-medium">Password:</span>
+              <span className="flex items-center gap-2">
+                <span className="truncate ml-2">
+                  {showPassword ? admin.password : '••••••'}
+                </span>
+                <button
+                  onClick={togglePasswordVisibility}
+                  className="text-gray-600 hover:text-gray-800"
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <MdVisibilityOff size={20} /> : <MdVisibility size={20} />}
+                </button>
+              </span>
+            </p>
+          )}
         </div>
 
         {isSuperAdmin && (
@@ -170,8 +192,9 @@ const EditAdminModal = ({ admin, isOpen, closeModal }) => {
     name: admin.name || "",
     branch: admin.branch || "",
     email: admin.email || "",
-    mobile_number: admin.mobile_number || "",
+    phone: admin.phone || "",
     role: admin.role || "",
+    password: "",
   });
   const [errors, setErrors] = useState({});
   const [imageFile, setImageFile] = useState(null);
@@ -198,14 +221,18 @@ const EditAdminModal = ({ admin, isOpen, closeModal }) => {
     }
 
     const phoneRegex = /^\d{10}$/;
-    if (!formData.mobile_number.trim()) {
-      newErrors.mobile_number = "Mobile number is required";
-    } else if (!phoneRegex.test(formData.mobile_number)) {
-      newErrors.mobile_number = "Mobile number must be 10 digits";
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Mobile number is required";
+    } else if (!phoneRegex.test(formData.phone)) {
+      newErrors.phone = "Mobile number must be 10 digits";
     }
 
     if (!formData.role.trim()) {
       newErrors.role = "Role is required";
+    }
+
+    if (formData.password && formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     setErrors(newErrors);
@@ -272,11 +299,17 @@ const EditAdminModal = ({ admin, isOpen, closeModal }) => {
       }
 
       const adminRef = doc(db, "Admin", admin.id);
-      await updateDoc(adminRef, {
+      const updateData = {
         ...formData,
         image_url: imageUrl,
-      });
+      };
 
+      // Only include password in update if it was changed
+      if (!formData.password) {
+        delete updateData.password;
+      }
+
+      await updateDoc(adminRef, updateData);
       closeModal();
     } catch (error) {
       console.error("Error updating admin:", error);
@@ -356,18 +389,16 @@ const EditAdminModal = ({ admin, isOpen, closeModal }) => {
           <div>
             <input
               type="tel"
-              name="mobile_number"
+              name="phone"
               placeholder="Mobile Number"
-              value={formData.mobile_number}
+              value={formData.phone}
               onChange={handleChange}
               className={`w-full p-3 border rounded focus:outline-none focus:ring-2 ${
-                errors.mobile_number ? "border-red-500" : "border-gray-300"
+                errors.phone ? "border-red-500" : "border-gray-300"
               }`}
             />
-            {errors.mobile_number && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.mobile_number}
-              </p>
+            {errors.phone && (
+              <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
             )}
           </div>
 
@@ -384,6 +415,22 @@ const EditAdminModal = ({ admin, isOpen, closeModal }) => {
             />
             {errors.role && (
               <p className="mt-1 text-sm text-red-500">{errors.role}</p>
+            )}
+          </div>
+
+          <div>
+            <input
+              type="password"
+              name="password"
+              placeholder="New Password (leave empty to keep current)"
+              value={formData.password}
+              onChange={handleChange}
+              className={`w-full p-3 border rounded focus:outline-none focus:ring-2 ${
+                errors.password ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-500">{errors.password}</p>
             )}
           </div>
 
@@ -495,8 +542,9 @@ const AddAdminModal = ({ isOpen, closeModal }) => {
     name: "",
     branch: "",
     email: "",
-    mobile_number: "",
+    phone: "",
     role: "",
+    password: "",
   });
   const [errors, setErrors] = useState({});
   const [imageFile, setImageFile] = useState(null);
@@ -523,14 +571,20 @@ const AddAdminModal = ({ isOpen, closeModal }) => {
     }
 
     const phoneRegex = /^\d{10}$/;
-    if (!formData.mobile_number.trim()) {
-      newErrors.mobile_number = "Mobile number is required";
-    } else if (!phoneRegex.test(formData.mobile_number)) {
-      newErrors.mobile_number = "Mobile number must be 10 digits";
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Mobile number is required";
+    } else if (!phoneRegex.test(formData.phone)) {
+      newErrors.phone = "Mobile number must be 10 digits";
     }
 
     if (!formData.role.trim()) {
       newErrors.role = "Role is required";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     setErrors(newErrors);
@@ -606,8 +660,9 @@ const AddAdminModal = ({ isOpen, closeModal }) => {
         name: "",
         branch: "",
         email: "",
-        mobile_number: "",
+        phone: "",
         role: "",
+        password: "",
       });
       setImageFile(null);
       closeModal();
@@ -689,18 +744,16 @@ const AddAdminModal = ({ isOpen, closeModal }) => {
           <div>
             <input
               type="tel"
-              name="mobile_number"
+              name="phone"
               placeholder="Mobile Number"
-              value={formData.mobile_number}
+              value={formData.phone}
               onChange={handleChange}
               className={`w-full p-3 border rounded focus:outline-none focus:ring-2 ${
-                errors.mobile_number ? "border-red-500" : "border-gray-300"
+                errors.phone ? "border-red-500" : "border-gray-300"
               }`}
             />
-            {errors.mobile_number && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.mobile_number}
-              </p>
+            {errors.phone && (
+              <p className="mt-1 text-sm text-red-500">{errors.phone}</p>
             )}
           </div>
 
@@ -717,6 +770,22 @@ const AddAdminModal = ({ isOpen, closeModal }) => {
             />
             {errors.role && (
               <p className="mt-1 text-sm text-red-500">{errors.role}</p>
+            )}
+          </div>
+
+          <div>
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              className={`w-full p-3 border rounded focus:outline-none focus:ring-2 ${
+                errors.password ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-500">{errors.password}</p>
             )}
           </div>
 
